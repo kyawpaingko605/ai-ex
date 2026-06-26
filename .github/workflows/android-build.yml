@@ -1,0 +1,62 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ] # main branch ထဲ ကုဒ်တွန်းရင် အလုပ်လုပ်မယ်
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Build Web Project
+      run: npm run build
+
+    # Capacitor သုံးပြီး Web assets တွေကို Android ဆီ ကူးပြောင်းခြင်း
+    - name: Sync Capacitor to Android
+      run: |
+        npx cap sync android
+
+    - name: Set up JDK 17 (Android Build အတွက် လိုအပ်)
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'zulu'
+
+    - name: Set up Gradle Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    # Android APK Build ဆွဲသည့်အဆင့်
+    - name: Build APK with Gradle
+      run: |
+        cd android
+        chmod +x ./gradlew
+        ./gradlew assembleDebug
+
+    # ထွက်လာတဲ့ APK ကို GitHub စနစ်ပေါ်သို့ တင်ပေးခြင်း (ဒါမှ ဒေါင်းလုဒ်ဆွဲလို့ရမှာပါ)
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-debug-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
