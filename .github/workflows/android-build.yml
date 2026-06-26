@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ] # main branch ထဲ ကုဒ်တွန်းရင် အလုပ်လုပ်မယ်
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -17,8 +17,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
-        cache: 'npm'
+        node-version: 24
 
     - name: Install Dependencies
       run: npm install
@@ -26,7 +25,6 @@ jobs:
     - name: Build Web Project
       run: npm run build
 
-    # Capacitor သုံးပြီး Web assets တွေကို Android ဆီ ကူးပြောင်းခြင်း
     - name: Sync Capacitor to Android
       run: |
         npx cap sync android
@@ -47,14 +45,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    # Android APK Build ဆွဲသည့်အဆင့်
     - name: Build APK with Gradle
       run: |
         cd android
         chmod +x ./gradlew
         ./gradlew assembleDebug
 
-    # ထွက်လာတဲ့ APK ကို GitHub စနစ်ပေါ်သို့ တင်ပေးခြင်း (ဒါမှ ဒေါင်းလုဒ်ဆွဲလို့ရမှာပါ)
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
